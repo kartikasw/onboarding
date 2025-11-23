@@ -8,20 +8,18 @@ type UserResponse struct {
 	Email string `json:"email"`
 }
 
-func NewUserResponse(user entity.User) UserResponse {
+func NewUserResponse(user entity.UserViewModel) UserResponse {
 	return UserResponse{
 		Email: user.Email,
 	}
 }
 
 type LoginResponse struct {
-	Token string       `json:"token"`
-	User  UserResponse `json:"user"`
+	Token string `json:"token"`
 }
 
-func NewLoginResponse(token string, user entity.User) LoginResponse {
+func NewLoginResponse(token string) LoginResponse {
 	return LoginResponse{
 		Token: token,
-		User:  NewUserResponse(user),
 	}
 }

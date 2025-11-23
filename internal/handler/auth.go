@@ -9,8 +9,9 @@ import (
 	"onboarding/api/request"
 	"onboarding/api/response"
 	"onboarding/common"
-	entity "onboarding/internal/entity"
 	"onboarding/internal/service"
+	"onboarding/pkg/token"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,12 +34,7 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 			}
 		}
 
-		arg := entity.User{
-			Email:    req.Email,
-			Password: req.Password,
-		}
-
-		result, err := h.authService.Register(c, arg)
+		result, err := h.authService.Register(c, req.Email, req.Password)
 
 		if err != nil {
 			err := err
@@ -69,12 +65,7 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 			}
 		}
 
-		arg := entity.User{
-			Email:    req.Email,
-			Password: req.Password,
-		}
-
-		result, token, err := h.authService.Login(c, arg)
+		token, err := h.authService.Login(c, req.Email, req.Password)
 		if err != nil {
 			var statusCode = http.StatusInternalServerError
 			if errors.Is(err, common.ErrRecordNotFound) || common.ErrorCode(err) == fmt.Sprint(common.ErrCredentiials) {
@@ -86,11 +77,35 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 				Error:      err,
 			}
 		}
+		if token == nil {
+			resChan <- apiHelper.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Error:      errors.New("Failed to generate token."),
+			}
+		}
+
+		setAuthCookies(ctx, token)
 
 		resChan <- apiHelper.ResponseData{
 			StatusCode: http.StatusOK,
 			Message:    "Login successful.",
-			Data:       response.NewLoginResponse(token, result),
+			Data:       response.NewLoginResponse(token.SignedToken),
 		}
+	})
+}
+
+func setAuthCookies(ctx *gin.Context, token *token.JWTToken) {
+	if token == nil {
+		return
+	}
+
+	http.SetCookie(ctx.Writer, &http.Cookie{
+		Name:     "access_token",
+		Value:    token.SignedToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int(token.ExpireAt.Sub(time.Now()).Seconds()),
 	})
 }
