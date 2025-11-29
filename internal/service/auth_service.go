@@ -52,7 +52,6 @@ func (s *IAuthService) Login(
 	email string,
 	password string,
 ) (*token.JWTToken, error) {
-
 	user, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, err

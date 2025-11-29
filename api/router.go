@@ -45,8 +45,7 @@ func (server *Server) Start(port string) error {
 }
 
 func (server *Server) setupRouter(cfg config.App) {
-	// gin.SetMode(cfg.GinMode)
-	gin.SetMode("debug")
+	gin.SetMode(cfg.GinMode)
 	router := gin.Default()
 
 	formRoutes := router.Group("/").Use(
@@ -58,13 +57,20 @@ func (server *Server) setupRouter(cfg config.App) {
 		formRoutes.POST("/auth/login", server.authHandler.Login)
 	}
 
+	authRoutes := router.Group("/").Use(
+		Authentication(server.jwtImpl),
+		Timeout(cfg.Timeout),
+	)
+	{
+		authRoutes.DELETE("/auth/logout", server.authHandler.Logout)
+	}
+
 	authFormRoutes := router.Group("/").Use(
 		ContentTypeValidation(),
 		Authentication(server.jwtImpl),
 		Timeout(cfg.Timeout),
 	)
 	{
-		authFormRoutes.DELETE("/auth/logout", server.authHandler.Logout)
 		authFormRoutes.GET("/user", server.userHandler.GetUser)
 		authFormRoutes.GET("/user/:uuid", server.userHandler.GetUser)
 	}
