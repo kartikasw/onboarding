@@ -94,18 +94,41 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	})
 }
 
+func (h *AuthHandler) Logout(ctx *gin.Context) {
+	apiHelper.ResponseHandler(ctx, func(c context.Context, resChan chan apiHelper.ResponseData) {
+		setAuthCookies(ctx, nil)
+
+		resChan <- apiHelper.ResponseData{
+			StatusCode: http.StatusOK,
+			Message:    "Logout successful.",
+		}
+	})
+}
+
 func setAuthCookies(ctx *gin.Context, token *token.JWTToken) {
+	var (
+		value  string
+		maxAge int
+	)
+
 	if token == nil {
-		return
+		value = ""
+		maxAge = -1
+	} else {
+		value = token.SignedToken
+		maxAge = int(time.Until(token.ExpireAt).Seconds())
+		if maxAge < 0 {
+			maxAge = -1
+		}
 	}
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:     "access_token",
-		Value:    token.SignedToken,
+		Value:    value,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   int(token.ExpireAt.Sub(time.Now()).Seconds()),
+		MaxAge:   maxAge,
 	})
 }

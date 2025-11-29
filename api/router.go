@@ -64,6 +64,7 @@ func (server *Server) setupRouter(cfg config.App) {
 		Timeout(cfg.Timeout),
 	)
 	{
+		authFormRoutes.DELETE("/auth/logout", server.authHandler.Logout)
 		authFormRoutes.GET("/user", server.userHandler.GetUser)
 		authFormRoutes.GET("/user/:uuid", server.userHandler.GetUser)
 	}
