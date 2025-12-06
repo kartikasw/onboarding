@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -12,6 +13,8 @@ import (
 type Config struct {
 	App      App
 	Database Database
+	Redis    Redis
+	SMTP     SMTP
 	Token    Token
 }
 
@@ -19,6 +22,8 @@ func NewConfig() Config {
 	return Config{
 		App:      NewApp(),
 		Database: NewDatabase(),
+		Redis:    NewRedis(),
+		SMTP:     NewSMTP(),
 		Token:    NewToken(),
 	}
 }
@@ -64,6 +69,42 @@ func NewDatabase() Database {
 		Timezone:     os.Getenv("DB_TIMEZONE"),
 		SslMode:      os.Getenv("DB_SSLMODE"),
 		MigrationURL: os.Getenv("DB_MIGRATION_URL"),
+	}
+}
+
+type Redis struct {
+	Host     string
+	Port     string
+	Password string
+	DB       int
+}
+
+func NewRedis() Redis {
+	dbNum, _ := strconv.Atoi(os.Getenv("REDIS_DB"))
+
+	return Redis{
+		Host:     os.Getenv("REDIS_HOST"),
+		Port:     os.Getenv("REDIS_PORT"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       dbNum,
+	}
+}
+
+type SMTP struct {
+	Host     string
+	Port     string
+	FromName string
+	Username string
+	Password string
+}
+
+func NewSMTP() SMTP {
+	return SMTP{
+		Host:     os.Getenv("SMTP_HOST"),
+		Port:     os.Getenv("SMTP_PORT"),
+		FromName: os.Getenv("SMTP_FROM_NAME"),
+		Username: os.Getenv("SMTP_USERNAME"),
+		Password: os.Getenv("SMTP_PASSWORD"),
 	}
 }
 

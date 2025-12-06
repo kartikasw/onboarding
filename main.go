@@ -6,18 +6,24 @@ import (
 	"onboarding/api"
 	"onboarding/internal/handler"
 	"onboarding/internal/repository"
+	otp "onboarding/internal/repository/otp"
 	"onboarding/internal/service"
 	"onboarding/pkg/config"
-	"onboarding/pkg/database"
+	"onboarding/pkg/storage"
 	"onboarding/pkg/token"
 )
 
 func main() {
 	cfg := config.LoadConfig()
 
-	db, err := database.InitDB(cfg.Database)
+	db, err := storage.InitDB(cfg.Database)
 	if err != nil {
 		log.Fatalf("Init DB error: %v", err)
+	}
+
+	redis, err := storage.InitRedis(cfg.Redis)
+	if err != nil {
+		log.Fatalf("Init Redis error: %v", err)
 	}
 
 	jwtImpl, err := token.NewJWT(cfg.Token)
@@ -29,10 +35,14 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
 
+	otpRepo := otp.NewOtpRepository(redis, cfg.SMTP)
+	otpService := service.NewOtpService(userRepo, otpRepo)
+	forgotPasswordHandler := handler.NewForgotPasswordHandler(otpService, userService)
+
 	authService := service.NewAuthService(userRepo, jwtImpl)
 	authHandler := handler.NewAuthHandler(authService)
 
-	server := api.NewServer(cfg.App, jwtImpl, authHandler, userHandler)
+	server := api.NewServer(cfg.App, jwtImpl, authHandler, userHandler, forgotPasswordHandler)
 	if err != nil {
 		log.Fatal("Couldn't create server: ", err)
 	}

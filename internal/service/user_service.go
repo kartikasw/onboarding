@@ -4,12 +4,14 @@ import (
 	"context"
 	"onboarding/internal/entity"
 	"onboarding/internal/repository"
+	pw "onboarding/pkg/password"
 
 	"github.com/google/uuid"
 )
 
 type UserService interface {
 	GetUser(ctx context.Context, id uuid.UUID) (entity.UserViewModel, error)
+	ChangeUserPassword(ctx context.Context, email, newPassword string) error
 }
 
 type IUserService struct {
@@ -31,4 +33,13 @@ func (s *IUserService) GetUser(ctx context.Context, uuid uuid.UUID) (entity.User
 	}
 
 	return user.ToViewModel(), err
+}
+
+func (s *IUserService) ChangeUserPassword(ctx context.Context, email, newPassword string) error {
+	hashedPassword, err := pw.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	return s.userRepo.UpdateUserPassword(ctx, email, hashedPassword)
 }

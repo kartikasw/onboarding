@@ -12,10 +12,11 @@ import (
 )
 
 type Server struct {
-	router      *gin.Engine
-	jwtImpl     token.JWT
-	authHandler *handler.AuthHandler
-	userHandler *handler.UserHandler
+	router                *gin.Engine
+	jwtImpl               token.JWT
+	authHandler           *handler.AuthHandler
+	userHandler           *handler.UserHandler
+	forgotPasswordHandler *handler.ForgotPasswordHandler
 }
 
 func NewServer(
@@ -23,11 +24,13 @@ func NewServer(
 	jwtImpl token.JWT,
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
+	forgotPasswordHandler *handler.ForgotPasswordHandler,
 ) *Server {
 	server := &Server{
-		jwtImpl:     jwtImpl,
-		authHandler: authHandler,
-		userHandler: userHandler,
+		jwtImpl:               jwtImpl,
+		authHandler:           authHandler,
+		userHandler:           userHandler,
+		forgotPasswordHandler: forgotPasswordHandler,
 	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -55,6 +58,8 @@ func (server *Server) setupRouter(cfg config.App) {
 	{
 		formRoutes.POST("/auth/register", server.authHandler.Register)
 		formRoutes.POST("/auth/login", server.authHandler.Login)
+		formRoutes.POST("/forgot-password", server.forgotPasswordHandler.RequestResetPassword)
+		formRoutes.POST("/new-password", server.authHandler.Login)
 	}
 
 	authRoutes := router.Group("/").Use(
