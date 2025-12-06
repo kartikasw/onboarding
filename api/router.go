@@ -59,7 +59,7 @@ func (server *Server) setupRouter(cfg config.App) {
 		formRoutes.POST("/auth/register", server.authHandler.Register)
 		formRoutes.POST("/auth/login", server.authHandler.Login)
 		formRoutes.POST("/forgot-password", server.forgotPasswordHandler.RequestResetPassword)
-		formRoutes.POST("/new-password", server.authHandler.Login)
+		formRoutes.POST("/reset-password", server.forgotPasswordHandler.ResetPassword)
 	}
 
 	authRoutes := router.Group("/").Use(
